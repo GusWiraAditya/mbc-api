@@ -14,11 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->statefulApi();
         $middleware->validateCsrfTokens(
-            except: [
-                'login'
-            ]
+            except: ['api/login','api/logout', 'api/register']
         );
     })
+
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
