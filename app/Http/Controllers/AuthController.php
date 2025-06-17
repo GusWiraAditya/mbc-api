@@ -71,6 +71,45 @@ class AuthController extends Controller
         ]);
     }
 
+   public function loginAdmin(Request $request)
+    {
+        // 1. Validasi input
+        $credentials = $request->validate([
+            'email'    => ['required','email'],
+            'password' => ['required'],
+        ]);
+
+        // 2. Coba auth
+        if (! Auth::attempt($credentials)) {
+            throw ValidationException::withMessages([
+                'email' => ['Kredensial yang diberikan tidak cocok.'],
+            ]);
+        }
+
+        // 3. Regenerate session untuk mencegah fixation
+        $request->session()->regenerate();
+
+        $user = $request->user();
+
+        // 4. Cek role
+        if (! $user->hasAnyRole(['admin', 'super-admin'])) {
+            // logout user yang sebenarnya sudah login
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            // beri error 403
+            return response()->json([
+                'message' => 'Akun tidak ditemukan'
+            ], 403);
+        }
+
+        // 5. Kirim response user + roles
+        return response()->json([
+            'user'  => $user->only(['id','name','email']),
+            'roles' => $user->getRoleNames(), // e.g. ['admin']
+        ], 200);
+    }
     /**
      * Mengambil data user yang sedang terotentikasi.
      */
