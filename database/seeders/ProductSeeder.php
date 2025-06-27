@@ -31,18 +31,24 @@ class ProductSeeder extends Seeder
                 'product_name' => 'Kaos Polos Katun',
                 'description' => 'Kaos polos berbahan katun yang nyaman dipakai sehari-hari.',
                 'price' => 75000,
+                'gender' => 'unisex',
+                'rating' => '4.7',
                 'stock' => 100,
             ],
             [
                 'product_name' => 'Celana Jeans Slim Fit',
                 'description' => 'Celana jeans model slim fit untuk tampilan kasual.',
                 'price' => 180000,
+                'gender' => 'women',
+                'rating' => '4.0',
                 'stock' => 50,
             ],
             [
                 'product_name' => 'Jaket Hoodie Zipper',
                 'description' => 'Hoodie dengan resleting depan dan bahan fleece tebal.',
                 'price' => 250000,
+                'gender' => 'men',
+                'rating' => '4.5',
                 'stock' => 30,
             ],
         ];
@@ -57,6 +63,8 @@ class ProductSeeder extends Seeder
                 'slug'          => Str::slug($data['product_name']) . '-' . uniqid(),
                 'description'   => $data['description'],
                 'price'         => $data['price'],
+                'gender'       => $data['gender'],
+                'rating'       => $data['rating'],
                 'stock'         => $data['stock'],
             ]);
 

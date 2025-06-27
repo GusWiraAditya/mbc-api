@@ -29,6 +29,8 @@ class ProductController extends Controller
             'name' => 'required|string',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
+            'gender' => 'nullable|string',
+            'rating' => 'nullable|string',
             'stock' => 'required|integer|min:0',
             'images.*' => 'nullable|image|max:2048',
         ]);
@@ -56,6 +58,8 @@ class ProductController extends Controller
             'name' => 'required|string',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
+            'gender' => 'nullable|enum:men,women,unisex',
+            'rating' => 'nullable|numeric|min:0|max:5',
             'stock' => 'required|integer|min:0',
             'images.*' => 'nullable|image|max:2048',
         ]);
