@@ -11,6 +11,11 @@ Route::get('/', function () {
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/login-admin', [AuthController::class, 'loginAdmin']);
 Route::post('/register', [AuthController::class, 'register']);
-Route::get('/user', [AuthController::class, 'user']);
-Route::post('/logout', [AuthController::class, 'logout']);
+
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/user', [AuthController::class, 'user']);
+    // Route::post('/logout-admin', [AuthController::class, 'logoutAdmin']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+});
 // Route::apiResource('kategori', KategoriController::class);
