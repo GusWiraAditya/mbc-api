@@ -14,4 +14,7 @@ use App\Http\Controllers\Admin\DashboardController;
 
 
 
-
+// // Rute ini akan mengembalikan status 200 jika user login, dan 401 jika tidak.
+// Route::middleware('auth:sanctum')->get('/auth/check', function (Request $request) {
+//     return response()->json(['authenticated' => true]);
+// });

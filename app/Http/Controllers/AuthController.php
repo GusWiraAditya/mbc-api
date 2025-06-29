@@ -81,7 +81,7 @@ class AuthController extends Controller
             $request->session()->regenerateToken();
 
             return response()->json([
-                'message' => 'Akun tidak memiliki akses admin.'
+                'message' => 'User tidak ditemukan'
             ], 403);
         }
 
