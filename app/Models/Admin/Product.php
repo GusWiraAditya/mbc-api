@@ -11,18 +11,24 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Product extends Model {
      use HasFactory;
-
     protected $table = 'product';
+    protected $fillable = [
+        'category_id', 'admin_id', 'slug', 'product_name', 'description',
+        'gender', 'is_active',
+    ];
 
-    protected $fillable = ['category_id','product_name','description','price','stock','slug','image','admin_id','gender','rating'];
-    public function category()
+    protected $casts = [
+        'is_active' => 'boolean',
+        'category_id' => 'integer', // Contoh cast lain yang baik
+    ];
+    // REVISI: Relasi utama sekarang ke varian, bukan gambar.
+    public function variants()
     {
-        return $this->belongsTo(Category::class);
+        return $this->hasMany(ProductVariant::class);
     }
 
-    public function images()
-    {
-        return $this->hasMany(ProductImage::class);
+    public function category() {
+        return $this->belongsTo(Category::class);
     }
     public function admin()
     {

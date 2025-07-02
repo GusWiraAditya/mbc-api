@@ -12,10 +12,9 @@ class Category extends Model
 
     protected $table = 'categories';
 
-    protected $fillable = [
-        'category_name',
-        'slug',
-        'image',
+     protected $fillable = [ 'category_name', 'slug', 'description', 'image', 'is_active' ];
+     protected $casts = [
+        'is_active' => 'boolean', // Contoh cast lain yang baik
     ];
     public function products() { return $this->hasMany(Product::class); }
 }

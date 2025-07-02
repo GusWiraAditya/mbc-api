@@ -18,17 +18,8 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->string('product_name');
             $table->text('description')->nullable();
-            $table->decimal('price', 10, 2);
             $table->enum('gender', ['men', 'women', 'unisex'])->nullable();
-            $table->decimal('rating', 2, 1)->nullable();
-            $table->integer('stock')->default(0);
-            $table->timestamps();
-        });
-
-        Schema::create('product_images', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('product_id')->constrained('product')->cascadeOnDelete();
-            $table->string('path');
+            $table->boolean('is_active')->default(true); // REVISI: Status aktif/nonaktif
             $table->timestamps();
         });
     }
