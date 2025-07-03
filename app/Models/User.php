@@ -22,7 +22,9 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'google_id',
         'password',
+        'profile_picture',
     ];
 
     /**
@@ -47,4 +49,24 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * REVISI: Tambahkan Accessor/Mutator ini.
+     * Atribut ini akan secara otomatis ditambahkan ke data JSON pengguna.
+     * Ia akan bernilai true hanya jika pengguna memiliki google_id.
+     *
+     * @return bool
+     */
+    public function getIsGoogleAccountAttribute(): bool
+    {
+        return !empty($this->google_id);
+    }
+
+    /**
+     * Kita perlu menambahkan atribut baru ini ke properti $appends
+     * agar ia otomatis disertakan saat model diubah menjadi JSON.
+     */
+    protected $appends = [
+        'is_google_account',
+    ];
 }

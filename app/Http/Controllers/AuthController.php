@@ -54,6 +54,7 @@ class AuthController extends Controller
         $user = $request->user();
 
         return response()->json([
+            // 'message' => 'Login berhasil.',
             'user'  => $user,
             'roles' => $user->getRoleNames(),
         ]);
@@ -62,7 +63,7 @@ class AuthController extends Controller
     public function loginAdmin(Request $request)
     {
         $credentials = $request->validate([
-            'email'    => ['required','email'],
+            'email'    => ['required', 'email'],
             'password' => ['required'],
         ]);
 
@@ -81,7 +82,7 @@ class AuthController extends Controller
             $request->session()->regenerateToken();
 
             return response()->json([
-                'message' => 'Akun tidak memiliki akses admin.'
+                'message' => 'User tidak ditemukan'
             ], 403);
         }
 
@@ -103,6 +104,33 @@ class AuthController extends Controller
             'user'  => $user,
             'roles' => $user->getRoleNames(),
         ]);
+    }
+
+    public function check(Request $request)
+    {
+        try {
+            // Additional check to ensure user is authenticated
+            if (!$request->user()) {
+                return response()->json([
+                    'authenticated' => false,
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+
+            $user = $request->user();
+            return response()->json([
+                'authenticated' => true,
+                'user_id' => $user->id,
+                'user' => [
+                    'roles' => $user->getRoleNames()
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'authenticated' => false,
+                'error' => 'Authentication check failed'
+            ], 500);
+        }
     }
 
     public function logout(Request $request)

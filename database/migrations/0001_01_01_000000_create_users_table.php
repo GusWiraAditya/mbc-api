@@ -13,10 +13,15 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->string('google_id')->nullable()->unique(); // Untuk login Google
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            
+            // REVISI: Ini adalah cara yang benar untuk membuat kolom password
+            // yang bisa kosong (untuk pengguna Google).
+            $table->string('password')->nullable(); 
+            
             $table->rememberToken();
             $table->string('phone_number', 20)->nullable();
             $table->date('date_of_birth')->nullable();
