@@ -35,7 +35,7 @@ class CategoryController extends Controller
         $validated['slug'] = Str::slug($validated['category_name']);
 
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('categories', 'public');
+            $validated['image'] = $request->file('image')->store('category-images', 'public');
         }
 
         $category = Category::create($validated);
@@ -71,7 +71,7 @@ class CategoryController extends Controller
             if ($category->image) {
                 Storage::disk('public')->delete($category->image);
             }
-            $validated['image'] = $request->file('image')->store('categories', 'public');
+            $validated['image'] = $request->file('image')->store('category-images', 'public');
         }
 
         $category->update($validated);

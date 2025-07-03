@@ -17,10 +17,9 @@ return new class extends Migration
             $table->foreignId('color_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('size_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('material_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('sku')->unique()->nullable(); // Stock Keeping Unit
-            $table->decimal('price', 10, 2);
+            $table->string('sku')->unique(); // Stock Keeping Unit
+            $table->decimal('price', 10, 2)->nullable();
             $table->integer('stock')->default(0);
-            $table->decimal('rating', 2, 1)->nullable();
             $table->timestamps();
         });
     }

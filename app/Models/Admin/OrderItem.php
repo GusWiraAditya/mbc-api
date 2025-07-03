@@ -24,8 +24,8 @@ class OrderItem extends Model
     }
 
     // 👜 Ke produk
-    // public function product()
-    // {
-    //     return $this->belongsTo(Product::class);
-    // }
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
 }
