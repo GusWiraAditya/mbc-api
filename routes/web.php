@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SocialiteController;
 use App\Http\Controllers\User\CartController;
+use App\Http\Controllers\User\ShopController;
 use App\Http\Controllers\Admin\SizeController;
 use App\Http\Controllers\Admin\ColorController;
 use App\Http\Controllers\Admin\ProductController;
@@ -12,6 +13,8 @@ use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\MaterialController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\User\PublicProductController;
+use App\Http\Controllers\User\PublicCategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,6 +31,7 @@ use App\Http\Controllers\Admin\DashboardController;
 Route::get('/', function () {
     return view('welcome');
 });
+
 
 
 /*
@@ -47,6 +51,19 @@ Route::controller(SocialiteController::class)->prefix('auth/google')->group(func
     Route::get('/callback', 'callback');
 });
 
+
+// API PUBLIK UNTUK SPA
+Route::get('/products/featured', [PublicProductController::class, 'featured']);
+Route::get('/products/{product:slug}', [PublicProductController::class, 'show']);
+Route::get('/products/{product:slug}/related', [PublicProductController::class, 'related']);
+
+Route::get('/categories/top', [PublicCategoryController::class, 'top']);
+// --- TAMBAHKAN DUA ROUTE DI BAWAH INI ---
+// Route untuk mendapatkan semua produk dengan filter & paginasi
+Route::get('/shop/products', [ShopController::class, 'getProducts']);
+
+// Route untuk mendapatkan data master untuk filter (kategori, warna, dll)
+Route::get('/shop/filters', [ShopController::class, 'getFilterMasterData']); // <-- TAMBAHKAN ROUTE INI
 
 /*
 |--------------------------------------------------------------------------
