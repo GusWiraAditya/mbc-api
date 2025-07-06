@@ -22,11 +22,11 @@ class CartSeeder extends Seeder
 
         foreach ($users as $user) {
             foreach ($products as $product) {
-                Cart::create([
-                    'customer_id' => $user->id,
-                    'product_id' => $product->id,
-                    'quantity' => rand(1, 5),
-                ]);
+                // Cart::create([
+                //     'customer_id' => $user->id,
+                //     'product_id' => $product->id,
+                //     'quantity' => rand(1, 5),
+                // ]);
             }
         }
     }
