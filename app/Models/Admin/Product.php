@@ -45,4 +45,9 @@ class Product extends Model
     {
         return $this->belongsTo(User::class, 'admin_id');
     }
+    public function vouchers()
+    {
+        return $this->belongsToMany(Voucher::class, 'product_voucher')
+                    ->using(ProductVoucher::class);
+    }
 }

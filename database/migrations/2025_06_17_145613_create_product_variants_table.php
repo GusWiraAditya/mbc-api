@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('sku')->unique(); // Stock Keeping Unit
             $table->decimal('price', 10, 2)->nullable();
             $table->integer('stock')->default(0);
+            $table->unsignedInteger('weight')->default(0);
             $table->timestamps();
         });
     }

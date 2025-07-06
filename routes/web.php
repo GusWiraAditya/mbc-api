@@ -9,6 +9,7 @@ use App\Http\Controllers\User\ShopController;
 use App\Http\Controllers\Admin\SizeController;
 use App\Http\Controllers\Admin\ColorController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\MaterialController;
@@ -52,18 +53,17 @@ Route::controller(SocialiteController::class)->prefix('auth/google')->group(func
 });
 
 
-// API PUBLIK UNTUK SPA
+
 Route::get('/products/featured', [PublicProductController::class, 'featured']);
 Route::get('/products/{product:slug}', [PublicProductController::class, 'show']);
 Route::get('/products/{product:slug}/related', [PublicProductController::class, 'related']);
 
 Route::get('/categories/top', [PublicCategoryController::class, 'top']);
-// --- TAMBAHKAN DUA ROUTE DI BAWAH INI ---
 // Route untuk mendapatkan semua produk dengan filter & paginasi
 Route::get('/shop/products', [ShopController::class, 'getProducts']);
-
 // Route untuk mendapatkan data master untuk filter (kategori, warna, dll)
 Route::get('/shop/filters', [ShopController::class, 'getFilterMasterData']); // <-- TAMBAHKAN ROUTE INI
+Route::get('/admin/settings', [SettingController::class, 'index']);
 
 /*
 |--------------------------------------------------------------------------
@@ -79,9 +79,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Endpoint untuk validasi sesi oleh middleware Next.js
     Route::get('/check', [AuthController::class, 'check']);
-
-    // Rute untuk keranjang belanja customer
-    Route::apiResource('cart', CartController::class);
 });
 
 
@@ -99,11 +96,14 @@ Route::middleware(['auth:sanctum', 'role:admin|super-admin'])->prefix('admin')->
 
     // Manajemen Produk
     Route::apiResource('categories', CategoryController::class);
-    Route::apiResource('products', ProductController::class);
     Route::apiResource('colors', ColorController::class);
     Route::apiResource('sizes', SizeController::class);
     Route::apiResource('materials', MaterialController::class);
-    Route::apiResource('vouchers', VoucherController::class);
+    Route::apiResource('products', ProductController::class);
+    Route::resource('/vouchers', VoucherController::class)->except(['create', 'edit']);
+});
 
-    // Anda bisa menambahkan rute admin lainnya di sini
+Route::middleware(['auth:sanctum', 'role:super-admin'])->prefix('admin')->name('admin.')->group(function () {
+
+    Route::post('/settings', [SettingController::class, 'update']);
 });

@@ -33,7 +33,7 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        // REVISI: Membuat aturan validasi SKU lebih eksplisit dan aman
+        
         $validated = $request->validate([
             'product_name' => 'required|string|max:255|unique:product,product_name',
             'category_id' => 'required|exists:categories,id',
@@ -46,10 +46,10 @@ class ProductController extends Controller
             'variants.*.color_id' => 'required|exists:colors,id',
             'variants.*.size_id' => 'required|exists:sizes,id',
             'variants.*.material_id' => 'required|exists:materials,id',
-            // Aturan 'unique' di sini sudah benar untuk method store
             'variants.*.sku' => 'required|string|max:255|unique:product_variants,sku',
             'variants.*.images' => 'nullable|array',
             'variants.*.images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+            'variants.*.weight' => 'required|integer|min:1',
         ]);
 
         $product = DB::transaction(function () use ($request, $validated) {
@@ -106,6 +106,7 @@ class ProductController extends Controller
             'deleted_variant_ids.*' => 'exists:product_variants,id',
             'variants.*.deleted_image_ids' => 'nullable|array',
             'variants.*.deleted_image_ids.*' => 'exists:product_images,id',
+            'variants.*.weight' => 'required|integer|min:1',
         ]);
 
         // Validasi unik untuk SKU secara dinamis
