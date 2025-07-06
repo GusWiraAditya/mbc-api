@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Admin\ProductVariant;
 use Illuminate\Support\ServiceProvider;
+use App\Observers\ProductVariantObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // --- REVISI: TAMBAHKAN BARIS INI UNTUK MENDAFTARKAN OBSERVER ---
+        ProductVariant::observe(ProductVariantObserver::class);
     }
 }

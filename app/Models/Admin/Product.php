@@ -9,17 +9,27 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 
-class Product extends Model {
-     use HasFactory;
+class Product extends Model
+{
+    use HasFactory;
     protected $table = 'product';
     protected $fillable = [
-        'category_id', 'admin_id', 'slug', 'product_name', 'description',
-        'gender', 'is_active'
+        'category_id',
+        'admin_id',
+        'slug',
+        'product_name',
+        'description',
+        'gender',
+        'is_active',
+        'min_price', // <-- TAMBAHKAN INI
+        'max_price', // <-- TAMBAHKAN INI
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'category_id' => 'integer', // Contoh cast lain yang baik
+        'category_id' => 'integer',
+        'min_price' => 'float', // <-- TAMBAHKAN INI
+        'max_price' => 'float', // <-- TAMBAHKAN INI // Contoh cast lain yang baik
     ];
     // REVISI: Relasi utama sekarang ke varian, bukan gambar.
     public function variants()
@@ -27,13 +37,12 @@ class Product extends Model {
         return $this->hasMany(ProductVariant::class);
     }
 
-    public function category() {
+    public function category()
+    {
         return $this->belongsTo(Category::class);
     }
     public function admin()
     {
         return $this->belongsTo(User::class, 'admin_id');
     }
-
 }
-

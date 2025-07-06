@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('product_name');
             $table->text('description')->nullable();
             $table->enum('gender', ['men', 'women', 'unisex'])->nullable();
+            $table->decimal('min_price', 10, 2)->default(0);
+            $table->decimal('max_price', 10, 2)->default(0);
             $table->boolean('is_active')->default(true); // REVISI: Status aktif/nonaktif
             $table->timestamps();
         });
