@@ -19,7 +19,7 @@ class SettingController extends Controller
             'shop_name'    => 'nullable|string|max:255',
             'shop_tagline' => 'nullable|string|max:255',
             'contact_email' => 'nullable|email|max:255',
-            'contact_phone' => ['nullable', 'string', 'min:10', 'max:15', 'regex:/^((\+62)|0)8[1-9][0-9]{6,11}$/'],
+            'contact_phone' => ['nullable', 'string', 'min:10', 'max:15', 'regex:/^((\+62)|0|62)8[1-9][0-9]{6,11}$/'],
             'shop_address' => 'nullable|string',
             'shop_latitude' => 'nullable|numeric',
             'shop_longitude' => 'nullable|numeric',
