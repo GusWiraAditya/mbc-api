@@ -27,7 +27,7 @@ class AuthController extends Controller
         ]);
 
         $user->assignRole('customer');
-        Auth::login($user);
+        // Auth::login($user);
         $request->session()->regenerate();
 
         return response()->json([
