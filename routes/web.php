@@ -76,9 +76,43 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Mengambil data pengguna yang sedang login & proses logout
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
-
     // Endpoint untuk validasi sesi oleh middleware Next.js
     Route::get('/check', [AuthController::class, 'check']);
+
+    Route::controller(CartController::class)->prefix('cart')->name('cart.')->group(function () {
+        // [GET] Mengambil state keranjang saat ini (items, summary, vouchers)
+        Route::get('/', 'index')->name('index');
+
+        // [POST] Menambahkan item baru ke keranjang
+        Route::post('/add', 'add')->name('add');
+
+        // [POST] Menggabungkan keranjang guest dengan keranjang user setelah login
+        Route::post('/merge', 'merge')->name('merge');
+
+        // [PUT] Mengubah kuantitas satu item di keranjang
+        // Kita menggunakan {cart}, Laravel akan otomatis mencari Cart item dengan ID tersebut
+        Route::put('/update/{cart}', 'update')->name('update');
+
+        // [POST] Menghapus satu atau lebih item dari keranjang
+        Route::post('/remove', 'remove')->name('remove');
+        
+        // [POST] Mengosongkan seluruh isi keranjang
+        Route::post('/clear', 'clear')->name('clear');
+
+        // [POST] Menandai/membatalkan pilihan item untuk checkout
+        Route::post('/toggle-select', 'toggleSelect')->name('toggle-select');
+    });
+
+    // =================================================================
+    // GRUP ROUTE BARU UNTUK VOUCHER
+    // =================================================================
+    Route::controller(CartController::class)->prefix('vouchers')->name('vouchers.')->group(function() {
+        // [POST] Menerapkan kode voucher ke keranjang
+        Route::post('/apply', 'applyVoucher')->name('apply');
+
+        // [POST] Menghapus voucher yang sudah diterapkan
+        Route::post('/remove', 'removeVoucher')->name('remove');
+    });
 });
 
 
@@ -100,7 +134,7 @@ Route::middleware(['auth:sanctum', 'role:admin|super-admin'])->prefix('admin')->
     Route::apiResource('sizes', SizeController::class);
     Route::apiResource('materials', MaterialController::class);
     Route::apiResource('products', ProductController::class);
-    Route::resource('/vouchers', VoucherController::class)->except(['create', 'edit']);
+    Route::resource('vouchers', VoucherController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
 });
 
 Route::middleware(['auth:sanctum', 'role:super-admin'])->prefix('admin')->name('admin.')->group(function () {

@@ -26,11 +26,23 @@ return new class extends Migration
             $table->decimal('value', 10, 2);
             $table->decimal('max_discount', 10, 2)->nullable();
             $table->decimal('min_purchase', 10, 2)->nullable();
+            
             $table->timestamp('start_date')->nullable();
             $table->timestamp('end_date')->nullable();
+
             $table->unsignedInteger('usage_limit')->nullable();
+            $table->unsignedInteger('times_used')->default(0); // Berapa kali sudah dipakai
             $table->unsignedInteger('usage_limit_per_user')->nullable();
+
+            $table->enum('stacking_group', [
+                'transaction_discount', 
+                'item_discount', 
+                'shipping_discount', 
+                'unique'
+            ])->nullable();
+
             $table->boolean('is_active')->default(true);
+
             $table->timestamps();
         });
     }

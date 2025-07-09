@@ -7,6 +7,7 @@ use App\Models\Admin\Voucher;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class VoucherController extends Controller
 {
@@ -15,6 +16,7 @@ class VoucherController extends Controller
      */
     public function index()
     {
+        // dd('METHOD INDEX DIPANGGIL'); 
         return Voucher::withCount(['products', 'categories'])->latest()->paginate(10);
     }
 
@@ -24,6 +26,7 @@ class VoucherController extends Controller
     public function store(Request $request)
     {
         // Aturan validasi dasar
+
         $rules = [
             'code' => 'required|string|max:255|unique:vouchers,code',
             'name' => 'required|string|max:255',
@@ -34,6 +37,7 @@ class VoucherController extends Controller
             'min_purchase' => 'nullable|numeric|min:0',
             'usage_limit' => 'nullable|integer|min:0',
             'usage_limit_per_user' => 'nullable|integer|min:0',
+            'stacking_group' => ['nullable', Rule::in(['transaction_discount', 'item_discount', 'shipping_discount', 'unique'])],
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_active' => 'required|boolean',
@@ -68,9 +72,12 @@ class VoucherController extends Controller
     /**
      * Menampilkan detail satu voucher.
      */
-    public function show(Voucher $voucher)
+    public function show($id)
     {
-        return $voucher->load('products', 'categories');
+        // dd('METHOD SHOW DIPANGGIL');
+        $voucher = Voucher::with(['products', 'categories'])->findOrFail($id);
+
+        return response()->json($voucher);
     }
 
     /**
@@ -89,6 +96,8 @@ class VoucherController extends Controller
             'min_purchase' => 'nullable|numeric|min:0',
             'usage_limit' => 'nullable|integer|min:0',
             'usage_limit_per_user' => 'nullable|integer|min:0',
+            'stacking_group' => ['nullable', Rule::in(['transaction_discount', 'item_discount', 'shipping_discount', 'unique'])],
+
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_active' => 'required|boolean',
@@ -119,9 +128,6 @@ class VoucherController extends Controller
         return response()->json($voucher->load('products', 'categories'));
     }
 
-    /**
-     * Menghapus voucher.
-     */
     public function destroy(Voucher $voucher)
     {
         $voucher->delete();
