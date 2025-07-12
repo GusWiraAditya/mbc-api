@@ -3,11 +3,15 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\SocialiteController;
 use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\User\ShopController;
 use App\Http\Controllers\Admin\SizeController;
+use App\Http\Controllers\User\OrderController;
 use App\Http\Controllers\Admin\ColorController;
+use App\Http\Controllers\User\AddressController;
+use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\VoucherController;
@@ -65,6 +69,33 @@ Route::get('/shop/products', [ShopController::class, 'getProducts']);
 Route::get('/shop/filters', [ShopController::class, 'getFilterMasterData']); // <-- TAMBAHKAN ROUTE INI
 Route::get('/admin/settings', [SettingController::class, 'index']);
 
+
+
+Route::controller(CartController::class)->prefix('cart')->name('cart.')->group(function () {
+    // [GET] Mengambil state keranjang saat ini (items, summary, vouchers)
+    Route::get('/', 'index')->name('index');
+
+    // [POST] Menambahkan item baru ke keranjang
+    Route::post('/add', 'add')->name('add');
+
+    // [POST] Menggabungkan keranjang guest dengan keranjang user setelah login
+    Route::post('/merge', 'merge')->name('merge');
+
+    // [PUT] Mengubah kuantitas satu item di keranjang
+    // Kita menggunakan {cart}, Laravel akan otomatis mencari Cart item dengan ID tersebut
+    Route::put('/update/{cart}', 'update')->name('update');
+
+    // [POST] Menghapus satu atau lebih item dari keranjang
+    Route::post('/remove', 'remove')->name('remove');
+
+    // [POST] Mengosongkan seluruh isi keranjang
+    Route::post('/clear', 'clear')->name('clear');
+
+    // [POST] Menandai/membatalkan pilihan item untuk checkout
+    Route::post('/toggle-select', 'toggleSelect')->name('toggle-select');
+
+    // Route khusus untuk mengatur alamat utama. Harus diletakkan sebelum apiResource.
+});
 /*
 |--------------------------------------------------------------------------
 | Rute Terproteksi (Memerlukan Login)
@@ -78,35 +109,22 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     // Endpoint untuk validasi sesi oleh middleware Next.js
     Route::get('/check', [AuthController::class, 'check']);
+    Route::put('/user/profile', [ProfileController::class, 'update'])->name('user.profile.update');
 
-    Route::controller(CartController::class)->prefix('cart')->name('cart.')->group(function () {
-        // [GET] Mengambil state keranjang saat ini (items, summary, vouchers)
-        Route::get('/', 'index')->name('index');
+    Route::post('addresses/{address}/set-primary', [AddressController::class, 'setPrimary'])
+        ->name('addresses.set-primary');
 
-        // [POST] Menambahkan item baru ke keranjang
-        Route::post('/add', 'add')->name('add');
-
-        // [POST] Menggabungkan keranjang guest dengan keranjang user setelah login
-        Route::post('/merge', 'merge')->name('merge');
-
-        // [PUT] Mengubah kuantitas satu item di keranjang
-        // Kita menggunakan {cart}, Laravel akan otomatis mencari Cart item dengan ID tersebut
-        Route::put('/update/{cart}', 'update')->name('update');
-
-        // [POST] Menghapus satu atau lebih item dari keranjang
-        Route::post('/remove', 'remove')->name('remove');
-        
-        // [POST] Mengosongkan seluruh isi keranjang
-        Route::post('/clear', 'clear')->name('clear');
-
-        // [POST] Menandai/membatalkan pilihan item untuk checkout
-        Route::post('/toggle-select', 'toggleSelect')->name('toggle-select');
+     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+    Route::apiResource('addresses', AddressController::class);
+    Route::controller(LocationController::class)->prefix('location')->name('location.')->group(function () {
+       Route::get('/provinces', 'getProvinces')->name('provinces');
+    Route::get('/cities/{provinceId}', 'getCities')->name('cities');
+    Route::get('/districts/{cityId}', 'getDistricts')->name('districts'); // <-- BARU
+    Route::get('/subdistricts/{districtId}', 'getSubdistricts')->name('subdistricts'); // <-- BARU
+    Route::post('/cost', 'calculateCost')->name('cost');
     });
 
-    // =================================================================
-    // GRUP ROUTE BARU UNTUK VOUCHER
-    // =================================================================
-    Route::controller(CartController::class)->prefix('vouchers')->name('vouchers.')->group(function() {
+    Route::controller(CartController::class)->prefix('vouchers')->name('vouchers.')->group(function () {
         // [POST] Menerapkan kode voucher ke keranjang
         Route::post('/apply', 'applyVoucher')->name('apply');
 
@@ -114,6 +132,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/remove', 'removeVoucher')->name('remove');
     });
 });
+
 
 
 /*

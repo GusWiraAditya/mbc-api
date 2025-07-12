@@ -4,10 +4,14 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\User\Cart;
+use App\Models\User\Address;
 use App\Models\Admin\Voucher;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -80,9 +84,17 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'gender',
         'google_id',
         'password',
         'profile_picture',
+        'phone_number',
+        'date_of_birth',
+        'email_verified_at',
+        'is_active',
+        'created_at',
+        'updated_at',
+        'is_google_account'
     ];
 
     /**
@@ -126,7 +138,21 @@ class User extends Authenticatable
      */
     protected $appends = [
         'is_google_account',
+        'profile_picture_url', // <-- TAMBAHKAN BARIS INI
     ];
+
+    protected function profilePictureUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value, $attributes) {
+                $profilePicture = $attributes['profile_picture'] ?? null;
+
+                // Jika ada path gambar, ubah menjadi URL lengkap.
+                // Jika tidak ada, kembalikan null.
+                return $profilePicture ? Storage::url($profilePicture) : null;
+            }
+        );
+    }
 
     public function carts(): HasMany
     {
@@ -139,7 +165,11 @@ class User extends Authenticatable
     public function appliedVouchers(): BelongsToMany
     {
         return $this->belongsToMany(Voucher::class, 'applied_vouchers', 'user_id', 'voucher_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(Address::class);
+    }
 }

@@ -60,6 +60,7 @@ class CartController extends Controller
                 'cartItemId'    => $cartItem->id,
                 'variantId'     => $variant->id,
                 'productId'     => $product->id,
+                'slug'          => $product->slug,
                 'categoryId'    => $product->category_id, // <-- PERUBAHAN PENTING
                 'productName'   => $product->product_name,
                 'variantName'   => "{$variant->color->name} / {$variant->size->name} / {$variant->material->name}",

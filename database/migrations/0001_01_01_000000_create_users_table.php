@@ -25,7 +25,7 @@ return new class extends Migration
             $table->rememberToken();
             $table->string('phone_number', 20)->nullable();
             $table->date('date_of_birth')->nullable();
-            $table->enum('gender', ['Pria', 'Wanita'])->nullable();
+            $table->enum('gender', ['Male', 'Female'])->nullable();
             $table->string('profile_picture')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
