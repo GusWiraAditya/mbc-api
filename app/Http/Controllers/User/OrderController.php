@@ -12,20 +12,43 @@ use Midtrans\Snap as MidtransSnap;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Midtrans\Config as MidtransConfig;
 
 class OrderController extends Controller
 {
+    // use AuthorizesRequests;
     protected $voucherService;
 
     public function __construct(VoucherService $voucherService)
     {
         $this->voucherService = $voucherService;
-        
+
         // Konfigurasi Midtrans yang diperbaiki
         $this->configureMidtrans();
     }
 
+    public function index()
+    {
+        try {
+        $user = Auth::user();
+        
+        if (!$user) {
+            return response()->json(['error' => 'User not authenticated'], 401);
+        }
+
+        // Test apakah relasi orders ada
+        $orders = $user->orders()
+                       ->select('id', 'order_number', 'grand_total', 'order_status', 'created_at') 
+                       ->latest()
+                       ->paginate(10);
+
+        return response()->json($orders);
+    } catch (\Exception $e) {
+        \Log::error('Order index error: ' . $e->getMessage());
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+    }
     /**
      * Konfigurasi Midtrans dengan validasi
      */
@@ -68,6 +91,8 @@ class OrderController extends Controller
             'shipping_service' => 'required|string',
             'shipping_cost' => 'required|numeric|min:0',
             'shipping_etd' => 'required|string',
+            'voucher_codes' => 'sometimes|array'
+
         ]);
 
         $user = Auth::user();
@@ -77,11 +102,11 @@ class OrderController extends Controller
             return response()->json(['message' => 'Alamat tidak valid.'], 403);
         }
 
-        $orderData = null; 
+        $orderData = null;
 
         try {
             DB::transaction(function () use ($user, $address, $validated, &$orderData) {
-                
+
                 $cartItems = $user->carts()->where('selected', true)->with(['productVariant.product', 'productVariant.color', 'productVariant.size'])->get();
                 if ($cartItems->isEmpty()) {
                     throw new \Exception('Keranjang Anda kosong atau tidak ada item yang dipilih.');
@@ -100,23 +125,34 @@ class OrderController extends Controller
                         throw new \Exception("Stok untuk produk {$variant->product->product_name} tidak mencukupi. Sisa stok: {$variant->stock}.");
                     }
                 }
-
-                $formattedCartItems = $cartItems->map(function ($cartItem) {
-                    return [
-                        'productId'     => $cartItem->productVariant->product->id,
-                        'categoryId'    => $cartItem->productVariant->product->category_id,
-                        'price'         => (float) $cartItem->productVariant->price,
-                        'quantity'      => $cartItem->quantity,
-                    ];
+                // 1. Hitung subtotal murni dari data di server
+                $subtotal = $cartItems->sum(function ($cartItem) {
+                    return $cartItem->productVariant->price * $cartItem->quantity;
                 });
 
-                $subtotal = $formattedCartItems->sum(fn($item) => $item['price'] * $item['quantity']);
+                // 2. Verifikasi ongkos kirim di backend
+                $finalShippingCost = (float) $validated['shipping_cost'];
+                $hasFreeShipping = $user->appliedVouchers->contains('type', 'free_shipping');
+                if ($hasFreeShipping) {
+                    $finalShippingCost = 0; // Paksa ongkir menjadi 0, abaikan input dari frontend
+                }
+                // 3. Hitung ulang total diskon di backend menggunakan VoucherService
+                $formattedCartItems = $cartItems->map(function ($cartItem) {
+                    return [
+                        'productId'    => $cartItem->productVariant->product->id,
+                        'categoryId'   => $cartItem->productVariant->product->category_id,
+                        'price'        => (float) $cartItem->productVariant->price,
+                        'quantity'     => $cartItem->quantity,
+                    ];
+                });
                 $totalDiscount = $this->voucherService->calculateTotalDiscount($user, $formattedCartItems);
-                $grandTotal = ($subtotal - $totalDiscount) + $validated['shipping_cost'];
+
+                // 4. Hitung grand total final di server
+                $grandTotal = ($subtotal - $totalDiscount) + $finalShippingCost;
 
                 // Validasi grand total
-                if ($grandTotal <= 0) {
-                    throw new \Exception('Total pesanan tidak valid');
+                if ($grandTotal < 0) { // Grand total tidak boleh negatif
+                    throw new \Exception('Total pesanan tidak valid.');
                 }
 
                 $order = Order::create([
@@ -124,7 +160,7 @@ class OrderController extends Controller
                     'shipping_address' => $address->toArray(),
                     'order_number' => 'INV/' . date('Ymd') . '/' . strtoupper(Str::random(6)),
                     'subtotal' => $subtotal,
-                    'shipping_cost' => $validated['shipping_cost'],
+                    'shipping_cost' => $finalShippingCost,
                     'discount_amount' => $totalDiscount,
                     'grand_total' => max(0, $grandTotal),
                     'shipping_courier' => $validated['shipping_courier'],
@@ -138,21 +174,21 @@ class OrderController extends Controller
                     $order->items()->create([
                         'product_variant_id' => $item->product_variant_id,
                         'product_name' => $item->productVariant->product->product_name,
-                        'variant_name' => "{$item->productVariant->color->name} / {$item->productVariant->size->name}",
+                        'variant_name' => "{$item->productVariant->color->name} / {$item->productVariant->size->name} / {$item->productVariant->material->name}",
                         'quantity' => $item->quantity,
                         'price' => $item->productVariant->price,
                         'weight' => $item->productVariant->weight,
                     ]);
                     $item->productVariant->decrement('stock', $item->quantity);
                 }
-                
+
                 foreach ($user->appliedVouchers as $voucher) {
                     $voucher->increment('times_used');
                     DB::table('voucher_usages')->insert([
-                        'user_id' => $user->id, 
-                        'voucher_id' => $voucher->id, 
+                        'user_id' => $user->id,
+                        'voucher_id' => $voucher->id,
                         'order_id' => $order->id,
-                        'created_at' => now(), 
+                        'created_at' => now(),
                         'updated_at' => now(),
                     ]);
                 }
@@ -169,26 +205,35 @@ class OrderController extends Controller
 
             // Generate Midtrans Snap Token
             $snapToken = $this->generateMidtransSnapToken($orderData['order'], $orderData['cartItems'], $user, $address);
-            
+
             $orderData['order']->update(['midtrans_snap_token' => $snapToken]);
 
             return response()->json([
-                'snap_token' => $snapToken, 
+                'snap_token' => $snapToken,
                 'order_id' => $orderData['order']->id,
                 'order_number' => $orderData['order']->order_number
             ]);
-
         } catch (\Exception $e) {
             Log::error('Order creation failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'user_id' => $user->id
             ]);
-            
+
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 
+    public function show(Order $order)
+    {
+        // PENTING: Validasi bahwa pengguna hanya bisa melihat pesanannya sendiri
+        // $this->authorize('view', $order);
+
+        // Muat relasi item-item di dalam pesanan agar ikut terkirim
+        $order->load('items');
+
+        return response()->json($order);
+    }
     /**
      * Generate Midtrans Snap Token
      */
@@ -197,22 +242,22 @@ class OrderController extends Controller
         try {
             // Prepare item details
             $itemDetails = collect();
-            
+
             foreach ($cartItems as $item) {
                 $itemDetails->push([
                     'id'       => 'ITEM_' . $item->product_variant_id,
                     'price'    => (int) $item->productVariant->price,
                     'quantity' => (int) $item->quantity,
-                    'name'     => $this->sanitizeItemName($item->productVariant->product->product_name),
+                    'name'     => $this->sanitizeItemName($item->productVariant->product->product_name).' ('.$item->productVariant->color->name.$item->productVariant->size->name.$item->productVariant->material->name.')',
                 ]);
             }
 
             // Add shipping cost if exists
             if ($order->shipping_cost > 0) {
                 $itemDetails->push([
-                    'id' => 'SHIPPING_COST', 
-                    'price' => (int) $order->shipping_cost, 
-                    'quantity' => 1, 
+                    'id' => 'SHIPPING_COST',
+                    'price' => (int) $order->shipping_cost,
+                    'quantity' => 1,
                     'name' => 'Biaya Pengiriman',
                 ]);
             }
@@ -220,15 +265,15 @@ class OrderController extends Controller
             // Add discount if exists
             if ($order->discount_amount > 0) {
                 $itemDetails->push([
-                    'id' => 'VOUCHER_DISCOUNT', 
-                    'price' => -((int) $order->discount_amount), 
-                    'quantity' => 1, 
+                    'id' => 'VOUCHER_DISCOUNT',
+                    'price' => - ((int) $order->discount_amount),
+                    'quantity' => 1,
                     'name' => 'Diskon Voucher',
                 ]);
             }
 
             // Validate total calculation
-            $calculatedTotal = $itemDetails->sum(function($item) {
+            $calculatedTotal = $itemDetails->sum(function ($item) {
                 return $item['price'] * $item['quantity'];
             });
 
@@ -275,9 +320,8 @@ class OrderController extends Controller
             ]);
 
             $snapToken = MidtransSnap::getSnapToken($midtransPayload);
-            
-            return $snapToken;
 
+            return $snapToken;
         } catch (\Exception $e) {
             Log::error('Midtrans Snap Token generation failed', [
                 'error' => $e->getMessage(),
@@ -285,7 +329,7 @@ class OrderController extends Controller
                 'order_id' => $order->id,
                 'payload' => $midtransPayload ?? 'Payload not generated'
             ]);
-            
+
             throw new \Exception('Gagal membuat sesi pembayaran: ' . $e->getMessage());
         }
     }

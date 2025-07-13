@@ -94,7 +94,7 @@ class CartController extends Controller
                     'name' => $voucher->name,
                     'start_date' => $voucher->start_date ? $voucher->start_date->format('Y-m-d H:i:s') : null,
                     'end_date' => $voucher->end_date ? $voucher->end_date->format('Y-m-d H:i:s') : null,
-                
+                    'type' => $voucher->type,
                     'description' => $voucher->description,
                     'discountAmount' => $this->voucherService->calculateDiscountForVoucher($user, $voucher, $selectedItems),
                 ];

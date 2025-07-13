@@ -2,15 +2,6 @@
 
 return [
     'paths' => [
-        // 'api/*', 
-        // 'sanctum/csrf-cookie', 
-        // 'login', 
-        // 'logout', 
-        // 'register', 
-        // 'login-admin', 
-        // 'user', 
-        // 'admin/*', 
-        // 'check'
         "*"
     ],
 

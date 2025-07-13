@@ -15,6 +15,8 @@ use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\VoucherController;
+use App\Http\Controllers\User\MidtransController;
+use App\Http\Controllers\User\ShippingController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\MaterialController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -96,6 +98,9 @@ Route::controller(CartController::class)->prefix('cart')->name('cart.')->group(f
 
     // Route khusus untuk mengatur alamat utama. Harus diletakkan sebelum apiResource.
 });
+
+Route::post('/midtrans/notification', [MidtransController::class, 'notificationHandler']);
+
 /*
 |--------------------------------------------------------------------------
 | Rute Terproteksi (Memerlukan Login)
@@ -104,32 +109,35 @@ Route::controller(CartController::class)->prefix('cart')->name('cart.')->group(f
 */
 Route::middleware(['auth:sanctum'])->group(function () {
 
-    // Mengambil data pengguna yang sedang login & proses logout
+   // Auth & Profile
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    // Endpoint untuk validasi sesi oleh middleware Next.js
     Route::get('/check', [AuthController::class, 'check']);
-    Route::put('/user/profile', [ProfileController::class, 'update'])->name('user.profile.update');
+    Route::put('/user/profile', [ProfileController::class, 'update']);
 
-    Route::post('addresses/{address}/set-primary', [AddressController::class, 'setPrimary'])
-        ->name('addresses.set-primary');
-
-     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+    // Address
+    Route::post('addresses/{address}/set-primary', [AddressController::class, 'setPrimary']);
     Route::apiResource('addresses', AddressController::class);
-    Route::controller(LocationController::class)->prefix('location')->name('location.')->group(function () {
-       Route::get('/provinces', 'getProvinces')->name('provinces');
-    Route::get('/cities/{provinceId}', 'getCities')->name('cities');
-    Route::get('/districts/{cityId}', 'getDistricts')->name('districts'); // <-- BARU
-    Route::get('/subdistricts/{districtId}', 'getSubdistricts')->name('subdistricts'); // <-- BARU
-    Route::post('/cost', 'calculateCost')->name('cost');
+
+    // Order
+    Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    // Location (Hanya untuk data geografis)
+    Route::controller(LocationController::class)->prefix('location')->group(function () {
+        Route::get('/provinces', 'getProvinces');
+        Route::get('/cities/{provinceId}', 'getCities');
+        Route::get('/districts/{cityId}', 'getDistricts');
+        Route::get('/subdistricts/{districtId}', 'getSubdistricts');
     });
+    
+    // Shipping (Hanya untuk kalkulasi biaya)
+    Route::post('/shipping/cost', [ShippingController::class, 'calculateCost']);
 
-    Route::controller(CartController::class)->prefix('vouchers')->name('vouchers.')->group(function () {
-        // [POST] Menerapkan kode voucher ke keranjang
-        Route::post('/apply', 'applyVoucher')->name('apply');
-
-        // [POST] Menghapus voucher yang sudah diterapkan
-        Route::post('/remove', 'removeVoucher')->name('remove');
+    // Vouchers (di dalam CartController)
+    Route::controller(CartController::class)->prefix('vouchers')->group(function () {
+        Route::post('/apply', 'applyVoucher');
+        Route::post('/remove', 'removeVoucher');
     });
 });
 

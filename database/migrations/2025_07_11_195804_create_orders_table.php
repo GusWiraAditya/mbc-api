@@ -37,8 +37,8 @@ return new class extends Migration
             // Status pembayaran & pesanan
             $table->enum('payment_status', ['pending', 'paid', 'failed', 'expired'])->default('pending');
             $table->string('payment_gateway')->default('midtrans');
-            $table->string('midtrans_transaction_id')->nullable();
             $table->string('midtrans_snap_token')->nullable();
+            $table->string('midtrans_transaction_id')->nullable();
 
             $table->enum('order_status', [
                 'pending_payment',
