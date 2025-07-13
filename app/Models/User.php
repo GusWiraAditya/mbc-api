@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Models\User\Cart;
 use App\Models\User\Address;
 use App\Models\Admin\Voucher;
+use App\Models\User\Order;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
@@ -171,5 +172,9 @@ class User extends Authenticatable
     public function addresses(): HasMany
     {
         return $this->hasMany(Address::class);
+    }
+
+    public function orders(): HasMany{
+        return $this->hasMany(Order::class);
     }
 }

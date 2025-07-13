@@ -17,7 +17,7 @@ use Midtrans\Config as MidtransConfig;
 
 class OrderController extends Controller
 {
-    // use AuthorizesRequests;
+    use AuthorizesRequests;
     protected $voucherService;
 
     public function __construct(VoucherService $voucherService)
@@ -28,30 +28,22 @@ class OrderController extends Controller
         $this->configureMidtrans();
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        try {
         $user = Auth::user();
-        
-        if (!$user) {
-            return response()->json(['error' => 'User not authenticated'], 401);
+        $query = $user->orders();
+
+        if ($request->has('status')) {
+            $query->where('order_status', $request->status);
         }
 
-        // Test apakah relasi orders ada
-        $orders = $user->orders()
-                       ->select('id', 'order_number', 'grand_total', 'order_status', 'created_at') 
-                       ->latest()
-                       ->paginate(10);
+        $orders = $query->select('id', 'order_number', 'grand_total', 'order_status', 'created_at')
+            ->latest()
+            ->paginate(5);
 
         return response()->json($orders);
-    } catch (\Exception $e) {
-        \Log::error('Order index error: ' . $e->getMessage());
-        return response()->json(['error' => $e->getMessage()], 500);
     }
-    }
-    /**
-     * Konfigurasi Midtrans dengan validasi
-     */
+
     private function configureMidtrans()
     {
         try {
@@ -79,10 +71,6 @@ class OrderController extends Controller
             throw $e;
         }
     }
-
-    /**
-     * Membuat pesanan baru, memproses keranjang, dan menghasilkan token pembayaran Midtrans.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -107,10 +95,12 @@ class OrderController extends Controller
         try {
             DB::transaction(function () use ($user, $address, $validated, &$orderData) {
 
-                $cartItems = $user->carts()->where('selected', true)->with(['productVariant.product', 'productVariant.color', 'productVariant.size'])->get();
-                if ($cartItems->isEmpty()) {
-                    throw new \Exception('Keranjang Anda kosong atau tidak ada item yang dipilih.');
-                }
+                $cartItems = $user->carts()->where('selected', true)->with([
+                    'productVariant.product',
+                    'productVariant.color',
+                    'productVariant.size',
+                    'productVariant.material' // <-- Ditambahkan untuk konsistensi
+                ])->get();
 
                 // Validasi data yang tangguh
                 foreach ($cartItems as $item) {
@@ -223,20 +213,23 @@ class OrderController extends Controller
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
-
     public function show(Order $order)
     {
         // PENTING: Validasi bahwa pengguna hanya bisa melihat pesanannya sendiri
-        // $this->authorize('view', $order);
+        $this->authorize('view', $order);
 
         // Muat relasi item-item di dalam pesanan agar ikut terkirim
-        $order->load('items');
+        $order->load([
+            'items.productVariant.product',
+            'items.productVariant.color',
+            'items.productVariant.size',
+            'items.productVariant.material'
+        ]);
 
         return response()->json($order);
     }
-    /**
-     * Generate Midtrans Snap Token
-     */
+    // app/Http/Controllers/User/OrderController.php
+
     private function generateMidtransSnapToken($order, $cartItems, $user, $address)
     {
         try {
@@ -244,11 +237,15 @@ class OrderController extends Controller
             $itemDetails = collect();
 
             foreach ($cartItems as $item) {
+                // --- REVISI KECIL (Opsional): Membuat nama varian lebih mudah dibaca ---
+                $variantName = " ({$item->productVariant->color->name} / {$item->productVariant->size->code} / {$item->productVariant->material->name} )";
+                $productName = $this->sanitizeItemName($item->productVariant->product->product_name . $variantName);
+
                 $itemDetails->push([
                     'id'       => 'ITEM_' . $item->product_variant_id,
                     'price'    => (int) $item->productVariant->price,
                     'quantity' => (int) $item->quantity,
-                    'name'     => $this->sanitizeItemName($item->productVariant->product->product_name).' ('.$item->productVariant->color->name.$item->productVariant->size->name.$item->productVariant->material->name.')',
+                    'name'     => $productName,
                 ]);
             }
 
@@ -272,18 +269,15 @@ class OrderController extends Controller
                 ]);
             }
 
-            // Validate total calculation
-            $calculatedTotal = $itemDetails->sum(function ($item) {
-                return $item['price'] * $item['quantity'];
-            });
-
-            if ($calculatedTotal !== (int) $order->grand_total) {
-                Log::warning('Total mismatch', [
-                    'calculated' => $calculatedTotal,
-                    'order_total' => (int) $order->grand_total,
-                    'order_id' => $order->id
-                ]);
-            }
+            // --- REVISI UTAMA: Normalisasi data alamat ---
+            // Cek apakah $address adalah objek atau array, lalu ambil datanya dengan cara yang sesuai.
+            $isAddressObject = is_object($address);
+            $recipientName = $isAddressObject ? $address->recipient_name : ($address['recipient_name'] ?? '');
+            $phoneNumber   = $isAddressObject ? $address->phone_number : ($address['phone_number'] ?? '');
+            $addressDetail = $isAddressObject ? $address->address_detail : ($address['address_detail'] ?? '');
+            $cityName      = $isAddressObject ? $address->city_name : ($address['city_name'] ?? '');
+            $postalCode    = $isAddressObject ? $address->postal_code : ($address['postal_code'] ?? '');
+            // --- AKHIR REVISI UTAMA ---
 
             $midtransPayload = [
                 'transaction_details' => [
@@ -296,11 +290,11 @@ class OrderController extends Controller
                     'email'      => $user->email,
                     'phone'      => $user->phone_number,
                     'shipping_address' => [
-                        'first_name'   => $this->sanitizeString($address->recipient_name),
-                        'phone'        => $address->phone_number,
-                        'address'      => $this->sanitizeString($address->address_detail),
-                        'city'         => $this->sanitizeString($address->city_name),
-                        'postal_code'  => $address->postal_code,
+                        'first_name'   => $this->sanitizeString($recipientName),
+                        'phone'        => $phoneNumber,
+                        'address'      => $this->sanitizeString($addressDetail),
+                        'city'         => $this->sanitizeString($cityName),
+                        'postal_code'  => $postalCode,
                         'country_code' => 'IDN',
                     ]
                 ],
@@ -311,17 +305,9 @@ class OrderController extends Controller
                 ]
             ];
 
-            // Log payload for debugging
-            Log::info('Midtrans Payload', [
-                'order_id' => $order->order_number,
-                'gross_amount' => (int) $order->grand_total,
-                'item_count' => count($itemDetails),
-                'payload' => $midtransPayload
-            ]);
+            Log::info('Midtrans Payload Generated', ['order_id' => $order->order_number]);
 
-            $snapToken = MidtransSnap::getSnapToken($midtransPayload);
-
-            return $snapToken;
+            return MidtransSnap::getSnapToken($midtransPayload);
         } catch (\Exception $e) {
             Log::error('Midtrans Snap Token generation failed', [
                 'error' => $e->getMessage(),
@@ -329,24 +315,54 @@ class OrderController extends Controller
                 'order_id' => $order->id,
                 'payload' => $midtransPayload ?? 'Payload not generated'
             ]);
-
             throw new \Exception('Gagal membuat sesi pembayaran: ' . $e->getMessage());
         }
     }
-
-    /**
-     * Sanitize item name for Midtrans
-     */
     private function sanitizeItemName($name)
     {
         return substr(preg_replace('/[^a-zA-Z0-9\s\-\_\.]/', '', $name), 0, 50);
     }
-
-    /**
-     * Sanitize string for Midtrans
-     */
     private function sanitizeString($string)
     {
         return preg_replace('/[^a-zA-Z0-9\s\-\_\.]/', '', $string);
+    }
+    public function retryPayment(Order $order)
+    {
+        // 1. Keamanan: Pastikan pengguna hanya bisa mencoba ulang pesanannya sendiri
+        $this->authorize('view', $order);
+
+        // 2. Validasi: Hanya izinkan jika status pembayaran masih 'pending'
+        if ($order->payment_status !== 'pending') {
+            return response()->json(['message' => 'This order can no longer be paid for.'], 400);
+        }
+
+        try {
+            // 3. Buat ulang token baru
+            // Kita perlu memuat relasi 'items' dan 'user' untuk generate token
+            $order->load([
+                'user',
+                'items.productVariant.product',
+                'items.productVariant.color',
+                'items.productVariant.size',
+                'items.productVariant.material'
+            ]);
+            $orderForMidtrans = $order->replicate(); // Buat duplikat order di memori
+            // Tambahkan sufiks unik (timestamp) untuk membuat order_id baru bagi Midtrans
+            $orderForMidtrans->order_number = $order->order_number . '-' . time();
+            // --- AKHIR REVISI ---
+
+            // Panggil fungsi generate token dengan data order yang sudah dimodifikasi
+            $snapToken = $this->generateMidtransSnapToken($orderForMidtrans, $order->items, $order->user, $order->shipping_address);
+
+            // 4. Simpan token baru ke database
+            $order->midtrans_snap_token = $snapToken;
+            $order->save();
+
+            // 5. Kirim token baru ke frontend
+            return response()->json(['snap_token' => $snapToken]);
+        } catch (\Exception $e) {
+            Log::error('Failed to retry Midtrans payment', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to create payment session.'], 500);
+        }
     }
 }

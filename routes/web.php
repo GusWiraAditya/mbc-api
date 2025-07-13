@@ -123,6 +123,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{order}/retry-payment', [OrderController::class, 'retryPayment'])->name('orders.retry-payment');
     // Location (Hanya untuk data geografis)
     Route::controller(LocationController::class)->prefix('location')->group(function () {
         Route::get('/provinces', 'getProvinces');

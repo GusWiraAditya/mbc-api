@@ -12,10 +12,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Order extends Model
 {
     use HasFactory;
-
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
         'user_id',
         'shipping_address',
@@ -31,30 +27,19 @@ class Order extends Model
         'payment_status',
         'payment_gateway',
         'midtrans_transaction_id',
+        'paid_at',
+        'fraud_status',
+        'payment_type',
         'midtrans_snap_token',
         'order_status',
     ];
-
-    /**
-     * The attributes that should be cast.
-     * Kita beri tahu Laravel untuk secara otomatis mengubah kolom
-     * 'shipping_address' dari JSON menjadi array PHP.
-     */
     protected $casts = [
         'shipping_address' => 'array',
     ];
-
-    /**
-     * Relasi: Satu pesanan dimiliki oleh satu User.
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
-
-    /**
-     * Relasi: Satu pesanan memiliki banyak item pesanan.
-     */
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
