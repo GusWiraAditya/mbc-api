@@ -22,7 +22,7 @@ class ProductSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Persiapan: Membersihkan data lama
+        // 1. Preparation: Clean up old data
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         Product::truncate();
         DB::table('product_variants')->truncate();
@@ -31,7 +31,7 @@ class ProductSeeder extends Seeder
         Storage::disk('public')->deleteDirectory('product-images');
         Storage::disk('public')->makeDirectory('product-images');
         
-        // 2. Mengambil data master
+        // 2. Fetch master data
         $adminUser = User::first();
         $categories = Category::all();
         $colors = Color::all();
@@ -39,89 +39,88 @@ class ProductSeeder extends Seeder
         $materials = Material::all();
 
         if ($categories->isEmpty() || $colors->isEmpty() || $sizes->isEmpty() || $materials->isEmpty() || !$adminUser) {
-            $this->command->error("Pastikan data User dan Atribut sudah ada sebelum menjalankan seeder ini.");
+            $this->command->error("Ensure User and Attribute data exist before running this seeder.");
             return;
         }
 
         // ==========================================================
-        // --- REVISI: DATA PRODUK DIPERBANYAK MENJADI 10 ---
+        // --- REVISION: PRODUCT DATA EXPANDED TO 10 ITEMS ---
         // ==========================================================
         $productsToCreate = [
             [
-                'name' => 'Tas Messenger Kulit Klasik "The Urbanite"',
-                'description' => 'Jelajahi kota dengan gaya menggunakan Tas Messenger Kulit Klasik "The Urbanite". Dibuat dari kulit asli kualitas terbaik, tas selempang pria ini menawarkan durabilitas dan tampilan profesional. Sangat cocok untuk kerja, kuliah, dan aktivitas harian. Beli tas kulit asli pria terbaik hanya di sini.',
-                'category' => 'Tas Messenger',
+                'name' => 'Classic Leather Messenger Bag "The Urbanite"',
+                'description' => 'Explore the city in style with the Classic Leather Messenger Bag "The Urbanite". Crafted from the finest quality genuine leather, this men\'s shoulder bag offers durability and a professional look. Perfect for work, college, and daily activities. Get the best genuine leather men\'s bag here.',
+                'category' => 'Messenger Bags',
                 'gender' => 'men',
                 'base_image' => 'tas-messenger.jpg'
             ],
             [
-                'name' => 'Tas Ransel Kulit "Voyager" untuk Petualang Kota',
-                'description' => 'Tas Ransel Kulit "Voyager" adalah partner setia untuk setiap petualangan. Dengan kompartemen laptop yang aman dan ruang penyimpanan luas, ransel kulit ini ideal untuk traveling atau kegiatan sehari-hari. Desainnya yang kokoh dan elegan menjadikannya pilihan utama ransel kulit tahan lama.',
-                'category' => 'Tas Ransel',
+                'name' => '"Voyager" Leather Backpack for the Urban Adventurer',
+                'description' => 'The "Voyager" Leather Backpack is a loyal partner for every adventure. With a secure laptop compartment and ample storage space, this leather backpack is ideal for travel or everyday use. Its sturdy and elegant design makes it the top choice for a durable leather backpack.',
+                'category' => 'Backpacks',
                 'gender' => 'unisex',
                 'base_image' => 'tas-ransel.jpg'
             ],
             [
-                'name' => 'Tote Bag Kulit Elegan "The Maven"',
-                'description' => 'Tampil chic dan fungsional dengan Tote Bag Kulit "The Maven". Tas tote wanita ini memiliki kapasitas besar untuk membawa semua kebutuhan Anda, mulai dari laptop hingga makeup. Terbuat dari kulit sintetis premium yang ramah lingkungan dan mudah dirawat. Pilihan tepat untuk wanita karir modern.',
-                'category' => 'Tas Tote',
+                'name' => 'Elegant Leather Tote Bag "The Maven"',
+                'description' => 'Look chic and functional with "The Maven" Leather Tote Bag. This women\'s tote has a large capacity to carry all your essentials, from a laptop to makeup. Made from premium, eco-friendly, and easy-to-maintain synthetic leather. The right choice for the modern career woman.',
+                'category' => 'Tote Bags',
                 'gender' => 'women',
                 'base_image' => 'tas-tote.jpg'
             ],
             [
-                'name' => 'Tas Laptop Kulit Profesional "The Executive"',
-                'description' => 'Bawa perangkat Anda dengan aman dan bergaya. Tas Laptop Kulit "The Executive" dirancang khusus dengan bantalan empuk untuk melindungi laptop hingga 15 inci. Desain minimalis dan material kulit asli memberikan kesan profesional yang kuat. Temukan tas kerja kulit terbaik untuk menunjang karir Anda.',
-                'category' => 'Tas Laptop',
+                'name' => 'Professional Leather Laptop Bag "The Executive"',
+                'description' => 'Carry your device safely and in style. "The Executive" Leather Laptop Bag is specially designed with padded cushioning to protect laptops up to 15 inches. Its minimalist design and genuine leather material provide a strong professional impression. Find the best leather work bag to support your career.',
+                'category' => 'Laptop Bags',
                 'gender' => 'unisex',
                 'base_image' => 'tas-laptop.jpg'
             ],
             [
-                'name' => 'Clutch Pesta Kulit "Starlight"',
-                'description' => 'Sempurnakan penampilan pesta Anda dengan Clutch Kulit "Starlight". Tas pesta wanita berdesain mewah ini dibuat dari kulit berkualitas dengan aksen metalik yang menawan. Ukurannya yang pas untuk digenggam menjadikannya aksesori wajib untuk acara formal dan malam spesial.',
-                'category' => 'Tas Pesta',
+                'name' => '"Starlight" Leather Party Clutch',
+                'description' => 'Perfect your party look with the "Starlight" Leather Clutch. This luxuriously designed women\'s party bag is made from quality leather with charming metallic accents. Its perfect handheld size makes it a must-have accessory for formal events and special nights.',
+                'category' => 'Clutch Bags',
                 'gender' => 'women',
                 'base_image' => 'tas-pesta.jpg'
             ],
             [
-                'name' => 'Tas Crossbody Kulit Ringkas "The Nomad"',
-                'description' => 'Untuk Anda yang aktif dan dinamis, Tas Crossbody Kulit "The Nomad" adalah jawabannya. Ukurannya yang ringkas sangat ideal untuk membawa barang esensial seperti ponsel, dompet, dan kunci. Tas selempang kecil ini adalah kombinasi sempurna antara kepraktisan dan gaya kasual.',
-                'category' => 'Tas Crossbody',
+                'name' => '"The Nomad" Compact Leather Crossbody Bag',
+                'description' => 'For the active and dynamic you, "The Nomad" Leather Crossbody Bag is the answer. Its compact size is ideal for carrying essentials like a phone, wallet, and keys. This small shoulder bag is the perfect combination of practicality and casual style.',
+                'category' => 'Crossbody Bags',
                 'gender' => 'unisex',
                 'base_image' => 'tas-crossbody.jpg'
             ],
             [
-                'name' => 'Handbag Kulit Wanita "The Duchess"',
-                'description' => '"The Duchess" adalah definisi keanggunan. Handbag kulit wanita ini memiliki struktur kokoh dan detail yang rapi, memancarkan aura kemewahan. Pilihan ideal untuk wanita yang menghargai kualitas dan desain abadi. Dapatkan tas tangan kulit asli impian Anda.',
-                'category' => 'Tas Handbag',
+                'name' => '"The Duchess" Women\'s Leather Handbag',
+                'description' => '"The Duchess" is the definition of elegance. This women\'s leather handbag has a sturdy structure and neat details, exuding an aura of luxury. An ideal choice for women who appreciate quality and timeless design. Get your dream genuine leather handbag.',
+                'category' => 'Handbags',
                 'gender' => 'women',
-                'base_image' => 'tas-tote.jpg' // Menggunakan gambar lain sebagai contoh
+                'base_image' => 'tas-tote.jpg' // Using another image as an example
             ],
             [
-                'name' => 'Tas Selempang Kanvas "The Explorer"',
-                'description' => 'Kombinasi kekuatan kanvas dan aksen kulit asli membuat tas selempang "The Explorer" ini pilihan tepat untuk gaya santai. Tahan lama, ringan, dan memiliki banyak kantong untuk organisasi yang lebih baik. Tas kanvas pria ini siap menemani setiap langkah Anda.',
-                'category' => 'Tas Selempang',
+                'name' => '"The Explorer" Canvas Shoulder Bag',
+                'description' => 'The combination of strong canvas and genuine leather accents makes "The Explorer" shoulder bag the right choice for a casual style. Durable, lightweight, and has many pockets for better organization. This men\'s canvas bag is ready to accompany your every step.',
+                'category' => 'Shoulder Bags',
                 'gender' => 'men',
                 'base_image' => 'tas-messenger.jpg'
             ],
             [
-                'name' => 'Ransel Laptop Minimalis "The Scholar"',
-                'description' => 'Dirancang untuk pelajar dan profesional, Ransel "The Scholar" menawarkan desain minimalis dengan fungsionalitas maksimal. Terbuat dari bahan kulit sintetis premium yang tahan air, menjaga barang-barang Anda tetap aman. Ransel laptop ini adalah pilihan cerdas untuk efisiensi.',
-                'category' => 'Tas Ransel',
+                'name' => '"The Scholar" Minimalist Laptop Backpack',
+                'description' => 'Designed for students and professionals, "The Scholar" Backpack offers a minimalist design with maximum functionality. Made from premium, water-resistant synthetic leather, keeping your belongings safe. This laptop backpack is a smart choice for efficiency.',
+                'category' => 'Backpacks',
                 'gender' => 'unisex',
                 'base_image' => 'tas-ransel.jpg'
             ],
             [
-                'name' => 'Tote Bag Kanvas "The Weekender"',
-                'description' => 'Tas tote berukuran besar yang sempurna untuk liburan akhir pekan atau ke gym. Dibuat dari bahan kanvas tebal dengan handle dari kulit asli yang nyaman. "The Weekender" adalah tas serbaguna yang kuat dan stylish untuk segala keperluan.',
-                'category' => 'Tas Tote',
+                'name' => '"The Weekender" Canvas Tote Bag',
+                'description' => 'A large-sized tote bag perfect for weekend getaways or trips to the gym. Made from thick canvas with comfortable genuine leather handles. "The Weekender" is a versatile, strong, and stylish bag for all your needs.',
+                'category' => 'Tote Bags',
                 'gender' => 'unisex',
                 'base_image' => 'tas-tote.jpg'
             ],
         ];
 
-
         foreach ($productsToCreate as $productData) {
-            $this->command->info("Membuat produk: {$productData['name']}");
+            $this->command->info("Creating product: {$productData['name']}");
 
             $product = Product::create([
                 'product_name' => $productData['name'],
@@ -134,7 +133,7 @@ class ProductSeeder extends Seeder
             ]);
 
             // ==========================================================
-            // --- REVISI: BUAT 1 SAMPAI 3 VARIAN SECARA ACAK ---
+            // --- REVISION: CREATE 1 TO 3 VARIANTS RANDOMLY ---
             // ==========================================================
             $numberOfVariants = rand(1, 3);
             for ($i = 0; $i < $numberOfVariants; $i++) {
@@ -142,14 +141,14 @@ class ProductSeeder extends Seeder
                 $size = $sizes->random();
                 $material = $materials->random();
 
-                // Membuat SKU
-                $productPart = strtoupper(str_replace(' ', '-', $product->product_name));
-                $colorPart = strtoupper(str_replace(' ', '-', $color->name));
+                // Create SKU
+                $productPart = strtoupper(Str::limit(str_replace('-', '', Str::slug($product->product_name)), 4, ''));
+                $colorPart = strtoupper(Str::limit($color->name, 3, ''));
                 $sizePart = strtoupper($size->code);
-                $materialPart = strtoupper(str_replace(' ', '-', $material->name));
+                $materialPart = strtoupper(Str::limit($material->name, 3, ''));
                 $sku = preg_replace('/-+/', '-', "{$productPart}-{$colorPart}-{$sizePart}-{$materialPart}");
                 
-                // Pastikan SKU unik jika terjadi duplikasi acak
+                // Ensure SKU is unique if random duplication occurs
                 if (DB::table('product_variants')->where('sku', $sku)->exists()) {
                     $sku .= '-' . Str::random(3);
                 }
@@ -158,12 +157,13 @@ class ProductSeeder extends Seeder
                     'sku' => $sku,
                     'price' => rand(250000, 950000),
                     'stock' => rand(5, 70),
+                    'weight' => rand(500, 1500), // Added weight in grams
                     'color_id' => $color->id,
                     'size_id' => $size->id,
                     'material_id' => $material->id,
                 ]);
 
-                // Membuat 1 atau 2 gambar untuk setiap varian
+                // Create 1 or 2 images for each variant
                 $numberOfImages = rand(1, 2);
                 for ($j = 0; $j < $numberOfImages; $j++) {
                     $sourcePath = storage_path('app/public/seed_images/' . $productData['base_image']);
@@ -173,7 +173,7 @@ class ProductSeeder extends Seeder
                         Storage::disk('public')->put($destinationPath, file_get_contents($sourcePath));
                         $variant->images()->create(['path' => $destinationPath]);
                     } else {
-                        $this->command->warn("File gambar sumber tidak ditemukan: {$sourcePath}");
+                        $this->command->warn("Source image file not found: {$sourcePath}");
                     }
                 }
             }

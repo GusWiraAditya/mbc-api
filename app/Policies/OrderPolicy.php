@@ -26,6 +26,12 @@ class OrderPolicy
         return $user->id === $order->user_id;
     }
 
+    public function confirmDelivery(User $user, Order $order): bool
+{
+    // Ini mengembalikan TRUE hanya jika ID user yang login SAMA DENGAN user_id di pesanan
+    return $user->id === $order->user_id;
+}
+
     /**
      * Determine whether the user can create models.
      */

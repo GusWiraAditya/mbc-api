@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\MaterialController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\User\PublicProductController;
 use App\Http\Controllers\User\PublicCategoryController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -124,6 +125,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::post('/orders/{order}/retry-payment', [OrderController::class, 'retryPayment'])->name('orders.retry-payment');
+    Route::post('/orders/{order}/confirm-delivery', [OrderController::class, 'confirmDelivery']);
     // Location (Hanya untuk data geografis)
     Route::controller(LocationController::class)->prefix('location')->group(function () {
         Route::get('/provinces', 'getProvinces');
@@ -154,7 +156,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::middleware(['auth:sanctum', 'role:admin|super-admin'])->prefix('admin')->name('admin.')->group(function () {
 
     // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
 
     // Manajemen Produk
     Route::apiResource('categories', CategoryController::class);
@@ -163,6 +166,20 @@ Route::middleware(['auth:sanctum', 'role:admin|super-admin'])->prefix('admin')->
     Route::apiResource('materials', MaterialController::class);
     Route::apiResource('products', ProductController::class);
     Route::resource('vouchers', VoucherController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+
+    Route::controller(AdminOrderController::class)->prefix('orders')->name('orders.')->group(function () {
+        // Halaman untuk menampilkan semua pesanan
+        Route::get('/', 'index')->name('index');
+        
+        // Halaman untuk menampilkan detail satu pesanan
+        Route::get('/{order}', 'show')->name('show');
+        
+        // Aksi untuk mengubah status pesanan (akan kita buat nanti)
+        Route::patch('/{order}/status', 'updateStatus')->name('updateStatus');
+        
+        // Aksi untuk menambah nomor resi (akan kita buat nanti)
+        Route::post('/{order}/tracking', 'addTrackingNumber')->name('addTracking');
+    });
 });
 
 Route::middleware(['auth:sanctum', 'role:super-admin'])->prefix('admin')->name('admin.')->group(function () {

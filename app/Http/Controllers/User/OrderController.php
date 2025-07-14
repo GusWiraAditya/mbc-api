@@ -228,6 +228,28 @@ class OrderController extends Controller
 
         return response()->json($order);
     }
+
+    public function confirmDelivery(Request $request, Order $order)
+    {
+        // 1. Otorisasi: Pastikan pengguna yang login adalah pemilik pesanan
+        $this->authorize('confirmDelivery', $order);
+
+        // 2. Validasi Status: Pastikan pesanan hanya bisa dikonfirmasi jika statusnya 'shipped'
+        if ($order->order_status !== 'shipped') {
+            return response()->json([
+                'message' => 'This order cannot be confirmed as it is not in "shipped" status.'
+            ], 409); // 409 Conflict
+        }
+
+        // 3. Update Status Pesanan
+        $order->order_status = 'completed'; // Ubah status menjadi 'completed'
+        $order->delivered_at = now();      // Simpan waktu pesanan diterima
+        $order->save();
+
+        // 4. Berikan Response Sukses
+        // Mengembalikan data pesanan yang sudah diupdate agar frontend bisa langsung refresh
+        return response()->json($order);
+    }
     // app/Http/Controllers/User/OrderController.php
 
     private function generateMidtransSnapToken($order, $cartItems, $user, $address)

@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use App\Models\Order;
+use App\Models\User;
+use App\Models\User\Order;
 use App\Models\Admin\Product;
-use Illuminate\Http\JsonResponse;
+use App\Models\Admin\Voucher;
+use App\Models\Admin\Category;
 use Illuminate\Support\Carbon;
+use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Controller;
 
 class DashboardController extends Controller
 {
@@ -15,22 +18,31 @@ class DashboardController extends Controller
      *
      * @return JsonResponse
      */
-    public function index(): JsonResponse
+    public function getStats()
     {
+        // Menghitung total pesanan
+        $dailyIncome = Order::whereDate('paid_at', Carbon::today())->sum('subtotal');
         $totalProducts = Product::count();
-        // $totalOrders = Order::count();
         // $totalSold = Order::where('status', 'delivered')->count();
-        // $dailyIncome = Order::whereDate('created_at', Carbon::today())->sum('total_price');
+        $totalOrders = Order::count();
 
+        // Menghitung total voucher
+        $totalVouchers = Voucher::count();
+        $totalCategories = Category::count();
+        // Menghitung user berdasarkan role
+        // $totalUsers = User::getRoleNames('customer')->count();
+        // $totalAdmins = User::getRoleNames('admin')->count();
+
+        // Mengembalikan semua data dalam satu response JSON
         return response()->json([
-            'success' => true,
             'data' => [
-                'total_products' => $totalProducts,
-                // 'total_orders' => $totalOrders,
-                // 'total_sold' => $totalSold,
-                // 'daily_income' => $dailyIncome,
-            ],
-            'message' => 'Dashboard data retrieved successfully.',
+                'dailyincome' => $dailyIncome,
+                'totalProducts' => $totalProducts,
+                'totalOrders' => $totalOrders,
+                'totalVouchers' => $totalVouchers,
+                'totalCategories' => $totalCategories,
+                // 'totalAdmins' => $totalAdmins,
+            ]
         ]);
     }
 }

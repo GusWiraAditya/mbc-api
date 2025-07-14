@@ -32,6 +32,7 @@ class Order extends Model
         'payment_type',
         'midtrans_snap_token',
         'order_status',
+        'delivered_at'
     ];
     protected $casts = [
         'shipping_address' => 'array',
